@@ -2,3 +2,5 @@ exercise/data
 __pycache__/
 .project
 .pydevproject
+/Logs
+.DS_Store
