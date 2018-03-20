@@ -1,6 +1,7 @@
 from enum import Enum
 from queue import PriorityQueue
 import numpy as np
+import math
 
 
 def create_grid(data, drone_altitude, safety_distance):
@@ -40,7 +41,7 @@ def create_grid(data, drone_altitude, safety_distance):
 
     return grid, int(north_min), int(east_min)
 
-
+DIAGONAL_COST = math.sqrt(2)
 # Assume all actions cost the same.
 class Action(Enum):
     """
@@ -55,6 +56,11 @@ class Action(Enum):
     EAST = (0, 1, 1)
     NORTH = (-1, 0, 1)
     SOUTH = (1, 0, 1)
+    
+    NORTH_WEST = (-1, -1, DIAGONAL_COST)
+    NORTH_EAST = (-1, 1, DIAGONAL_COST)
+    SOUTH_WEST = (1, -1, DIAGONAL_COST)
+    SOUTH_EAST = (1, 1, DIAGONAL_COST)
 
     @property
     def cost(self):
@@ -84,6 +90,15 @@ def valid_actions(grid, current_node):
         valid_actions.remove(Action.WEST)
     if y + 1 > m or grid[x, y + 1] == 1:
         valid_actions.remove(Action.EAST)
+        
+    if x -1 < 0 or y-1 < 0 or grid[x-1, y-1] == 1:
+        valid_actions.remove(Action.NORTH_WEST)
+    if x -1 < 0 or y+1 > m or grid[x-1, y+1] == 1:
+        valid_actions.remove(Action.NORTH_EAST)
+    if x +1 > n or y-1 < 0 or grid[x+1, y-1] == 1:
+        valid_actions.remove(Action.SOUTH_WEST)
+    if x +1 > n or y+1 > m or grid[x+1, y+1] == 1:
+        valid_actions.remove(Action.SOUTH_EAST)
 
     return valid_actions
 
