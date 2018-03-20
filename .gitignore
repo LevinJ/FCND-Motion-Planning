@@ -4,3 +4,4 @@ __pycache__/
 .pydevproject
 /Logs
 .DS_Store
+.settings/
