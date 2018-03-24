@@ -12,7 +12,7 @@ from bresenham import bresenham
 
 
 # Read in the obstacle data
-filename = './data/colliders.csv'
+filename = '../data/colliders.csv'
 data = np.loadtxt(filename, delimiter=',', dtype='Float64', skiprows=2)
 
 

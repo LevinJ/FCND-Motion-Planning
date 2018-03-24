@@ -14,6 +14,8 @@ import re
 import matplotlib.pyplot as plt
 from mp_utils import prune_path
 
+from udacidrone.frame_utils import global_to_local, local_to_global
+
 
 # plt.rcParams["figure.figsize"] = [12, 12]
 
@@ -21,6 +23,21 @@ from mp_utils import prune_path
 class VisualizeMap(object):
     def __init__(self):
         return
+    
+    def grid2lonlat(self, p, north_offset,east_offset,TARGET_ALTITUDE=5):
+        home_lon, home_lat = -122.397450, 37.792480, 
+        global_home = (home_lon, home_lat)
+        local_position = [p[0] + north_offset, p[1] + east_offset, TARGET_ALTITUDE]
+        lonlat = local_to_global(local_position, global_home)
+        print("global lon, lat={}".format(lonlat))
+        
+        return 
+    def lontat2grid(self, global_position, north_offset,east_offset):
+        home_lon, home_lat = -122.397450, 37.792480, 
+        global_home = (home_lon, home_lat)
+        location_position = global_to_local(global_position, global_home)
+        grid_position = (int(round(location_position[0]-north_offset)), int(round(location_position[1]-east_offset)))
+        return grid_position
     def show_map(self,grid,grid_start,grid_goal, path = None):
         plt.imshow(grid, origin='lower') 
         plt.scatter(grid_start[1], grid_start[0], c='red')
@@ -39,22 +56,6 @@ class VisualizeMap(object):
    
    
     def run(self):
-#         with open("colliders.csv", "r") as f:
-#             first_line = f.readline()
-#             searchObj = re.search( r'lat0 (.*), lon0 (.*)', first_line)
-#         lat0, lon0 = float(searchObj.group(1)),float(searchObj.group(2))
-#         # TODO: set home position to (lat0, lon0, 0)
-#         self.set_home_position(lon0, lat0, 0)
-# 
-#         # TODO: retrieve current global position
-#         global_position = self.global_position
-#  
-#         # TODO: convert to current local position using global_to_local()
-#         local_position = global_to_local(global_position, self.global_home)
-# #         assert(local_position == self.local_position)
-#         
-#         print('global home {0}, position {1}, local position {2}'.format(self.global_home, self.global_position,
-#                                                                          self.local_position))
         # Read in obstacle map
         data = np.loadtxt('colliders.csv', delimiter=',', dtype='Float64', skiprows=2)
         
@@ -62,18 +63,39 @@ class VisualizeMap(object):
         TARGET_ALTITUDE = 0.01
         SAFETY_DISTANCE = 5
         grid, north_offset, east_offset = create_grid(data, TARGET_ALTITUDE, SAFETY_DISTANCE)
-        print("North offset = {0}, east offset = {1}".format(north_offset, east_offset))
+#         print("North offset = {0}, east offset = {1}".format(north_offset, east_offset))
         
         grid_start = (0-north_offset, 0-east_offset)
         grid_goal = (900 , 522)
-#         self.show_map(grid, grid_start, grid_goal)
+        grid_goal = self.lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset)
+       
+        grid_goal = (276 , 116)
+        grid_goal = self.lontat2grid([-1.22401189e+02,  3.77921385e+01, -1.00000000e-02], north_offset, east_offset)
+
+        self.grid2lonlat(grid_goal, north_offset, east_offset, TARGET_ALTITUDE)
+        
+        
+        
+        b_show_map = False
+        
+
+        
+        
+        if b_show_map:
+            self.show_map(grid, grid_start, grid_goal)
+            return
+    
         
         print('Local Start and Goal: ', grid_start, grid_goal)
         path, _ = a_star(grid, heuristic, grid_start, grid_goal)
         print("path point num = {}, path={}".format(len(path), path))
-        
+         
         path = prune_path(path)
         print("pruned path point num = {}, path={}".format(len(path), path))
+        
+        if len(path) ==0:
+            print("failed to find the path!!!")
+            return
         self.show_map(grid, grid_start, grid_goal, path)
         
         

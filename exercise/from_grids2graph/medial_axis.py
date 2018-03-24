@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from grid import create_grid
+from exercise.grid import create_grid
 from skimage.morphology import medial_axis
 from skimage.util import invert
-from planning import a_star
+from exercise.planning import a_star
 
 
 
@@ -13,7 +13,7 @@ plt.rcParams['figure.figsize'] = 12, 12
 
 
 # This is the same obstacle data from the previous lesson.
-filename = './data/colliders.csv'
+filename = '../data/colliders.csv'
 data = np.loadtxt(filename, delimiter=',', dtype='Float64', skiprows=2)
 print(data)
 

@@ -112,7 +112,7 @@ def a_star(grid, h, start, goal):
     path = []
     path_cost = 0
     queue = PriorityQueue()
-    queue.put((0, start))
+    queue.put((h(start, goal), start, 0))  #(estimated cost, node, current_path_length)
     visited = set(start)
 
     branch = {}
@@ -120,8 +120,7 @@ def a_star(grid, h, start, goal):
 
     while not queue.empty():
         item = queue.get()
-        current_cost = item[0]
-        current_node = item[1]
+        _, current_node, current_cost = item
 
         if current_node == goal:
             print('Found a path.')
@@ -131,11 +130,12 @@ def a_star(grid, h, start, goal):
             # Get the new vertexes connected to the current vertex
             for a in valid_actions(grid, current_node):
                 next_node = (current_node[0] + a.delta[0], current_node[1] + a.delta[1])
-                new_cost = current_cost + a.cost + h(next_node, goal)
+                new_path_len = current_cost + a.cost
+                new_cost =  new_path_len + h(next_node, goal)
 
                 if next_node not in visited:
                     visited.add(next_node)
-                    queue.put((new_cost, next_node))
+                    queue.put((new_cost, next_node, new_path_len))
 
                     branch[next_node] = (new_cost, current_node, a)
 
