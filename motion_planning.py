@@ -12,6 +12,7 @@ from udacidrone.messaging import MsgID
 from udacidrone.frame_utils import global_to_local
 import re
 from mp_utils import prune_path
+from mp_utils import lontat2grid, raw_grid_method
 
 
 class States(Enum):
@@ -113,6 +114,7 @@ class MotionPlanning(Drone):
         data = msgpack.dumps(self.waypoints)
         self.connection._master.write(data)
         return
+    
 
     def plan_path(self):
         self.flight_state = States.PLANNING
@@ -153,20 +155,13 @@ class MotionPlanning(Drone):
         # Set goal as some arbitrary position on the grid
 #         grid_goal = (-north_offset + 10, -east_offset + 10)
         # TODO: adapt to set goal as latitude / longitude position and convert
-        grid_goal = (900 , 522)
+#         grid_goal = (900 , 522)
+        grid_goal = lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
         
-        # Run A* to find a path from start to goal
-        # TODO: add diagonal motions with a cost of sqrt(2) to your A* implementation
-        # or move to a different search space such as a graph (not done here)
         print('Local Start and Goal: ', grid_start, grid_goal)
-        path, _ = a_star(grid, heuristic, grid_start, grid_goal)
         
-        # TODO: prune path to minimize number of waypoints
-        # TODO (if you're feeling ambitious): Try a different approach altogether!
-        print("path point num = {}, path={}".format(len(path), path))
-        path = prune_path(path)
-        print("pruned path point num = {}, path={}".format(len(path), path))
-
+        #grid based path planning
+        path = raw_grid_method(grid, grid_start, grid_goal)
         # Convert path to waypoints
         waypoints = [[p[0] + north_offset, p[1] + east_offset, TARGET_ALTITUDE, 0] for p in path]
         # Set self.waypoints

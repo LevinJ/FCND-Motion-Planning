@@ -1,4 +1,12 @@
 import numpy as np
+from udacidrone.frame_utils import global_to_local, local_to_global
+from planning_utils import a_star, heuristic, create_grid
+
+
+def lontat2grid(global_position, north_offset,east_offset, global_home):
+    location_position = global_to_local(global_position, global_home)
+    grid_position = (int(round(location_position[0]-north_offset)), int(round(location_position[1]-east_offset)))
+    return grid_position
 
 def point(p):
     return np.array([p[0], p[1], 1.])
@@ -37,3 +45,10 @@ def prune_path(path):
         else:
             i += 1
     return pruned_path
+
+def raw_grid_method(grid, grid_start, grid_goal):
+        path, _ = a_star(grid, heuristic, grid_start, grid_goal)
+        print("path point num = {}, path={}".format(len(path), path))
+        path = prune_path(path)
+        print("pruned path point num = {}, path={}".format(len(path), path))
+        return path

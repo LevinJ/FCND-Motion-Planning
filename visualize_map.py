@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from mp_utils import prune_path
 
 from udacidrone.frame_utils import global_to_local, local_to_global
+from mp_utils import lontat2grid, raw_grid_method
 
 
 # plt.rcParams["figure.figsize"] = [12, 12]
@@ -32,12 +33,10 @@ class VisualizeMap(object):
         print("global lon, lat={}".format(lonlat))
         
         return 
-    def lontat2grid(self, global_position, north_offset,east_offset):
-        home_lon, home_lat = -122.397450, 37.792480, 
-        global_home = (home_lon, home_lat)
-        location_position = global_to_local(global_position, global_home)
-        grid_position = (int(round(location_position[0]-north_offset)), int(round(location_position[1]-east_offset)))
-        return grid_position
+#     def lontat2grid(self, global_position, north_offset,east_offset, global_home):
+#         location_position = global_to_local(global_position, global_home)
+#         grid_position = (int(round(location_position[0]-north_offset)), int(round(location_position[1]-east_offset)))
+#         return grid_position
     def show_map(self,grid,grid_start,grid_goal, path = None):
         plt.imshow(grid, origin='lower') 
         plt.scatter(grid_start[1], grid_start[0], c='red')
@@ -64,13 +63,14 @@ class VisualizeMap(object):
         SAFETY_DISTANCE = 5
         grid, north_offset, east_offset = create_grid(data, TARGET_ALTITUDE, SAFETY_DISTANCE)
 #         print("North offset = {0}, east offset = {1}".format(north_offset, east_offset))
-        
+        home_lon, home_lat = -122.397450, 37.792480, 
+        global_home = (home_lon, home_lat)
         grid_start = (0-north_offset, 0-east_offset)
-        grid_goal = (900 , 522)
-        grid_goal = self.lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset)
+#         grid_goal = (900 , 522)
+#         grid_goal = lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset, global_home)
        
         grid_goal = (276 , 116)
-        grid_goal = self.lontat2grid([-1.22401189e+02,  3.77921385e+01, -1.00000000e-02], north_offset, east_offset)
+        grid_goal = lontat2grid([-1.22401189e+02,  3.77921385e+01, -1.00000000e-02], north_offset, east_offset, global_home)
 
         self.grid2lonlat(grid_goal, north_offset, east_offset, TARGET_ALTITUDE)
         
@@ -86,13 +86,13 @@ class VisualizeMap(object):
             return
     
         
-        print('Local Start and Goal: ', grid_start, grid_goal)
-        path, _ = a_star(grid, heuristic, grid_start, grid_goal)
-        print("path point num = {}, path={}".format(len(path), path))
-         
-        path = prune_path(path)
-        print("pruned path point num = {}, path={}".format(len(path), path))
-        
+#         print('Local Start and Goal: ', grid_start, grid_goal)
+#         path, _ = a_star(grid, heuristic, grid_start, grid_goal)
+#         print("path point num = {}, path={}".format(len(path), path))
+#          
+#         path = prune_path(path)
+#         print("pruned path point num = {}, path={}".format(len(path), path))
+        path = raw_grid_method(grid, grid_start, grid_goal)
         if len(path) ==0:
             print("failed to find the path!!!")
             return
