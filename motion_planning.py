@@ -12,7 +12,7 @@ from udacidrone.messaging import MsgID
 from udacidrone.frame_utils import global_to_local
 import re
 from mp_utils import prune_path
-from mp_utils import lontat2grid, raw_grid_method
+from mp_utils import lontat2grid, raw_grid_method,media_axis_method
 
 
 class States(Enum):
@@ -156,12 +156,15 @@ class MotionPlanning(Drone):
 #         grid_goal = (-north_offset + 10, -east_offset + 10)
         # TODO: adapt to set goal as latitude / longitude position and convert
 #         grid_goal = (900 , 522)
-        grid_goal = lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
+#         grid_goal = lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
+        grid_goal = lontat2grid([-1.22401189e+02,  3.77921385e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
         
         print('Local Start and Goal: ', grid_start, grid_goal)
         
         #grid based path planning
-        path = raw_grid_method(grid, grid_start, grid_goal)
+#         path = raw_grid_method(grid, grid_start, grid_goal, check_linear = False)
+        #media aix based path planning
+        path = media_axis_method(grid, grid_start, grid_goal, check_linear = False)
         # Convert path to waypoints
         waypoints = [[p[0] + north_offset, p[1] + east_offset, TARGET_ALTITUDE, 0] for p in path]
         # Set self.waypoints
