@@ -13,7 +13,7 @@ This project is a continuation of the Backyard Flyer project where we executed a
 
 `motion_planning.py` is basically a modified version of `backyard_flyer.py` that leverages some extra functions in `planning_utils.py`. 
 
-Both complete the flight by transition the program from one state to next in a state machine fashion, namely, MANUAL, ARMING ,TAKEOFF, WAYPOINT, LANDING, DISARMING states. What's different is, in this project, we are now inserting a new state PLANNING between ARMING and TAKEOFF. In this new PLANNING, we will plan out the wayoints that the flight should follow.
+Both complete the flight by transitioning the program from one state to next in a state machine fashion, namely, MANUAL, ARMING ,TAKEOFF, WAYPOINT, LANDING, DISARMING states. What's different is, in this project, we are now inserting a new state PLANNING between ARMING and TAKEOFF. In this new PLANNING state, we will plan out the wayoints that the flight should follow.
 
 ### Implementing Path Planning Algorithm
 
@@ -52,7 +52,7 @@ We Tried three different goal positions in our test of search algorithm,
 //grid_goal = lontat2grid([-1.22402341e+02,  3.77944427e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
 
 ```
-Global coordinate to grid coordinte function `lontat2grid` is implemented in the `mp_utils` file.
+Global coordinate to grid coordinte function `lontat2grid` is implemented in the `mp_utils` file.  
 6. Imlement search algorithm
 
 A* is used to perform the optimal path from start position to goal positions.
