@@ -52,7 +52,7 @@ We Tried three different goal positions in our test of search algorithm,
 //grid_goal = lontat2grid([-1.22402341e+02,  3.77944427e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
 
 ```
-Global coordinate to grid coordinte function `lontat2grid` is implemented in the `mp_utils` file.  
+Global coordinate to grid coordinte conversion function `lontat2grid` is implemented in the `mp_utils` file.  
 6. Imlement search algorithm
 
 A* is used to perform the optimal path from start position to goal positions.
@@ -61,7 +61,7 @@ Three different methods are explored to construct the grid/graph that A* uses.
 
 1). raw grid search 
 
-Perfrom A* on the raw configuration space. The advantage is that the algorithm is guranteed to be complete as long as the grid resolution is small engough. The disadvantage is that path planned would often are very close to buiding, and are deemed a bit "unsafe".
+Perfrom A* on the raw configuration space. The advantage is that the algorithm is guranteed to be complete as long as the grid resolution is small enough. The disadvantage is that path planned would often are very close to buiding, and are deemed a bit "unsafe".
 
 This is implemented in the `raw_grid_method ` function in the "mp_utils" file.
 
@@ -71,7 +71,7 @@ Perfrom A* on the media axis grid. This approach is also complete, and the path 
 This is implemented in the `media_axis_method ` function in the "mp_utils" file.
 
 3). Voronoi based search
-Perfrom A* on the Voronoi graph. This approach is not compete. This search is not guranteed to be complete. This is because the center of the obstacle may not correspond well the contour of the obstacle, and thus some places may not be reachable by by voronoi graph even if they are in reality are. The good side is that the path is also as far away from surrounding obstacle as possible too.
+Perfrom A* on the Voronoi graph. This approach is not compete. This search is not guranteed to be complete. This is because the center of the obstacle may not correspond well the contour of the obstacle, and thus some places may not be reachable by by voronoi graph even if they are in reality are. The good side is that the path is as far away from surrounding obstacle as possible too.
 
 7. Prune waypoints 
 
