@@ -3,7 +3,7 @@
 
 
 
-This project is a continuation of the Backyard Flyer project where you executed a simple square shaped flight path. In this project you will integrate the techniques that you have learned throughout the last several lessons to plan a path through an urban environment.
+This project is a continuation of the Backyard Flyer project where we executed a simple square shaped flight path. In this project we will integrate the techniques that we have learned throughout the last several lessons to plan a path through an urban environment.
 
 
 
