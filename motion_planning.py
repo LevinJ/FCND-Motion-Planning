@@ -12,7 +12,7 @@ from udacidrone.messaging import MsgID
 from udacidrone.frame_utils import global_to_local
 import re
 from mp_utils import prune_path
-from mp_utils import lontat2grid, raw_grid_method,media_axis_method
+from mp_utils import lontat2grid, raw_grid_method,media_axis_method,voronoi_method
 
 
 class States(Enum):
@@ -130,10 +130,10 @@ class MotionPlanning(Drone):
             first_line = f.readline()
             searchObj = re.search( r'lat0 (.*), lon0 (.*)', first_line)
         lat0, lon0 = float(searchObj.group(1)),float(searchObj.group(2))
-        # TODO: set home position to (lat0, lon0, 0)
+        # set home position to (lat0, lon0, 0)
         self.set_home_position(lon0, lat0, 0)
 
-        # TODO: retrieve current global position
+        # retrieve current global position
         global_position = self.global_position
  
         # TODO: convert to current local position using global_to_local()
@@ -148,23 +148,31 @@ class MotionPlanning(Drone):
         grid, north_offset, east_offset = create_grid(data, TARGET_ALTITUDE, SAFETY_DISTANCE)
         print("North offset = {0}, east offset = {1}".format(north_offset, east_offset))
         # Define starting point on the grid (this is just grid center)
-        grid_start = (-north_offset, -east_offset)
-        # TODO: convert start position to current position rather than map center
+       
         grid_start = (int(local_position[0]-north_offset), int(local_position[1]-east_offset))
         
-        # Set goal as some arbitrary position on the grid
-#         grid_goal = (-north_offset + 10, -east_offset + 10)
-        # TODO: adapt to set goal as latitude / longitude position and convert
-#         grid_goal = (900 , 522)
-#         grid_goal = lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
-        grid_goal = lontat2grid([-1.22401189e+02,  3.77921385e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
+        # Goal position 1, grid_goal = (900 , 522)
+        grid_goal = lontat2grid([-1.22396533e+02,  3.77977389e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
+
+        #Goal position 2, grid_goal = (276 , 116)
+#         grid_goal = lontat2grid([-1.22401189e+02,  3.77921385e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
+        
+        #Goal position 3, grid_goal = (531, 13)
+#         grid_goal = lontat2grid([-1.22402341e+02,  3.77944427e+01, -1.00000000e-02], north_offset, east_offset, self.global_home)
         
         print('Local Start and Goal: ', grid_start, grid_goal)
         
         #grid based path planning
 #         path = raw_grid_method(grid, grid_start, grid_goal, check_linear = False)
         #media aix based path planning
-        path = media_axis_method(grid, grid_start, grid_goal, check_linear = False)
+        path, skeleton, start_ne, goal_ne = media_axis_method(grid, grid_start, grid_goal, check_linear = False)
+        
+        #voronoi graph based pathplanning
+#         path, edges, start_ne, start_ne_g, goal_ne, goal_ne_g = voronoi_method(data, TARGET_ALTITUDE, SAFETY_DISTANCE, grid_start, grid_goal, check_linear = False)
+        
+        if len(path) == 0:
+            print("######WARNING, there is no viable path to the goal, please select another goal####")
+            return
         # Convert path to waypoints
         waypoints = [[p[0] + north_offset, p[1] + east_offset, TARGET_ALTITUDE, 0] for p in path]
         # Set self.waypoints

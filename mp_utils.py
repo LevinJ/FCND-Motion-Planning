@@ -3,6 +3,11 @@ from udacidrone.frame_utils import global_to_local, local_to_global
 from planning_utils import a_star, heuristic, create_grid
 from skimage.morphology import medial_axis
 from skimage.util import invert
+from scipy.spatial import Voronoi, voronoi_plot_2d
+from bresenham import bresenham
+import networkx as nx
+import numpy.linalg as LA
+import a_star_graph
 
 
 def lontat2grid(global_position, north_offset,east_offset, global_home):
@@ -73,10 +78,10 @@ def check_no_obstacle(p1, p2, p3,grid, check_linear = True):
     return bres_no_obstacle_check(p1, p3,grid)
     
 
-# We're using collinearity here, but you could use Bresenham as well!
+# check_linear is a flag which allows us to choose either collinearity test or Bresenham
+#the grid in only used for Bresenham method
 def prune_path(path, grid = None, check_linear = True):
     pruned_path = [p for p in path]
-    # TODO: prune the path!
     
     i = 0
     while i < len(pruned_path) - 3:
@@ -98,12 +103,7 @@ def prune_path(path, grid = None, check_linear = True):
             i += 1
     return pruned_path
 
-def raw_grid_method(grid, grid_start, grid_goal, check_linear = False):
-    path, _ = a_star(grid, heuristic, grid_start, grid_goal)
-    print("path point num = {}, path={}".format(len(path), path))
-    path = prune_path(path, grid = grid, check_linear = check_linear)
-    print("pruned path point num = {}, path={}".format(len(path), path))
-    return path
+
 
 def find_start_goal(skel, start, goal):
     skel_cells = np.transpose(skel.nonzero())
@@ -114,12 +114,93 @@ def find_start_goal(skel, start, goal):
     
     return near_start, near_goal
 
+
+def create_grid_and_edges(data, drone_altitude, safety_distance):
+    """
+    Returns a grid representation of a 2D configuration space
+    along with Voronoi graph edges given obstacle data and the
+    drone's altitude.
+    """
+    
+    # minimum and maximum north coordinates
+    north_min = np.floor(np.min(data[:, 0] - data[:, 3]))
+    north_max = np.ceil(np.max(data[:, 0] + data[:, 3]))
+
+    # minimum and maximum east coordinates
+    east_min = np.floor(np.min(data[:, 1] - data[:, 4]))
+    east_max = np.ceil(np.max(data[:, 1] + data[:, 4]))
+
+    # given the minimum and maximum coordinates we can
+    # calculate the size of the grid.
+    north_size = int(np.ceil((north_max - north_min + 1)))
+    east_size = int(np.ceil((east_max - east_min + 1)))
+
+    # Initialize an empty grid
+    grid = np.zeros((north_size, east_size))
+    
+    # Define a list to hold Voronoi points
+    points = []
+    # Populate the grid with obstacles
+    for i in range(data.shape[0]):
+        north, east, alt, d_north, d_east, d_alt = data[i, :]
+        if alt + d_alt + safety_distance > drone_altitude:
+            obstacle = [
+                int(np.clip(north - d_north - safety_distance - north_min, 0, north_size-1)),
+                int(np.clip(north + d_north + safety_distance - north_min, 0, north_size-1)),
+                int(np.clip(east - d_east - safety_distance - east_min, 0, east_size-1)),
+                int(np.clip(east + d_east + safety_distance - east_min, 0, east_size-1)),
+            ]
+            grid[obstacle[0]:obstacle[1]+1, obstacle[2]:obstacle[3]+1] = 1
+            # add center of obstacles to points list
+            points.append([north - north_min, east - east_min])
+            
+    # TODO: create a voronoi graph based on
+    # location of obstacle centres
+    graph = Voronoi(points)
+
+    # TODO: check each edge from graph.ridge_vertices for collision
+    edges = []
+    for v in graph.ridge_vertices:
+        p1 = graph.vertices[v[0]]
+        p2 = graph.vertices[v[1]]
+        cells = list(bresenham(int(p1[0]), int(p1[1]), int(p2[0]), int(p2[1])))
+        hit = False
+
+        for c in cells:
+            # First check if we're off the map
+            if np.amin(c) < 0 or c[0] >= grid.shape[0] or c[1] >= grid.shape[1]:
+                hit = True
+                break
+            # Next check if we're in collision
+            if grid[c[0], c[1]] == 1:
+                hit = True
+                break
+
+        # If the edge does not hit on obstacle
+        # add it to the list
+        if not hit:
+            # array to tuple for future graph creation step)
+            p1 = (p1[0], p1[1])
+            p2 = (p2[0], p2[1])
+            edges.append((p1, p2))
+
+    return grid, edges
+def raw_grid_method(grid, grid_start, grid_goal, check_linear = False):
+    path, _ = a_star(grid, heuristic, grid_start, grid_goal)
+    print("path point num = {}, path={}".format(len(path), path))
+    path = prune_path(path, grid = grid, check_linear = check_linear)
+    print("pruned path point num = {}, path={}".format(len(path), path))
+    return path
+
 def media_axis_method(grid, grid_start, grid_goal, check_linear = True):
     #check_linear specify how we do path pruning, if True, we choose colinearity
     #if False, we use bresenham, usually bresenham yield a much better result
     skeleton = medial_axis(invert(grid))
     skel_start, skel_goal = find_start_goal(skeleton, grid_start, grid_goal)
     path, _ = a_star(invert(skeleton).astype(np.int), heuristic, tuple(skel_start), tuple(skel_goal))
+    if len(path) == 0:
+#         print("warning, no path is found, please select another point")
+        return path
     
     #insert the start and end point if necessary
     if tuple(skel_start) != grid_start:
@@ -132,7 +213,39 @@ def media_axis_method(grid, grid_start, grid_goal, check_linear = True):
     path = prune_path(path, grid = grid, check_linear = check_linear)
     print("pruned path point num = {}, path={}".format(len(path), path))
     path = np.array(path).astype(int).tolist()
-    return path
+    return path, skeleton, grid_start, grid_goal 
+
+def voronoi_method(data, drone_altitude, safety_distance, start_ne, goal_ne, check_linear = True):
+    grid, edges = create_grid_and_edges(data, drone_altitude, safety_distance)
+    G = nx.Graph()
+    for e in edges:
+        p1 = e[0]
+        p2 = e[1]
+        dist = LA.norm(np.array(p2) - np.array(p1))
+        G.add_edge(p1, p2, weight=dist)
+    
+    start_ne_g = a_star_graph.closest_point(G, start_ne)
+    goal_ne_g = a_star_graph.closest_point(G, goal_ne)
+    print(start_ne_g)
+    print(goal_ne_g)
+    
+    path, _ = a_star_graph.a_star(G, heuristic, start_ne_g, goal_ne_g)
+    if len(path) == 0:
+#         print("warning, no path is found, please select another point")
+        return path,edges, start_ne, start_ne_g, goal_ne, goal_ne_g
+    
+    #insert the start and end point if necessary
+    if tuple(start_ne_g) != start_ne:
+        path.insert(0, start_ne)
+    if tuple(goal_ne_g) != goal_ne:
+        path.append(goal_ne)
+    
+    #prune the path
+    print("path point num = {}, path={}".format(len(path), path))
+    path = prune_path(path, grid = grid, check_linear = check_linear)
+    print("pruned path point num = {}, path={}".format(len(path), path))
+    path = np.array(path).astype(int).tolist()
+    return path,edges, start_ne, start_ne_g, goal_ne, goal_ne_g 
 
 
     
